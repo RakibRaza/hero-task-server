@@ -32,7 +32,7 @@ client.connect((err) => {
 
   // Get All Job
   app.get("/jobs", (req, res) => {
-    jobCollection.find({ status: 'done' }).toArray((err, collection) => res.send(collection));
+    jobCollection.find({}).toArray((err, collection) => res.send(collection));
   });
 
   // Add Users
@@ -40,6 +40,14 @@ client.connect((err) => {
     const user = req.body;
     userCollection.insertOne(user).then((result) => {
       res.send(result.insertedCount > 0);
+    });
+  });
+
+  // Get user
+  app.get("/user", (req, res) => {
+    const email = req.query.email;
+    userCollection.find({ email }).toArray((err, collection) => {
+      res.send(collection);
     });
   });
 
