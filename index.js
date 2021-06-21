@@ -31,8 +31,17 @@ client.connect((err) => {
   });
 
   // Get All Job
-  app.get("/jobs", (req, res) => {
-    jobCollection.find({}).toArray((err, collection) => res.send(collection));
+  app.get("/approvedJobs", (req, res) => {
+    jobCollection.find({ status: 'done' }).toArray((err, collection) => res.send(collection));
+  });
+  app.get("/pendingJobs", (req, res) => {
+    jobCollection.find({ status: 'pending' }).toArray((err, collection) => res.send(collection));
+  });
+  app.get("/employerJobs", (req, res) => {
+    const email = req.query.email;
+    jobCollection.find({ email }).toArray((err, collection) => {
+      res.send(collection);
+    });
   });
 
   // Add Users
@@ -49,6 +58,33 @@ client.connect((err) => {
     userCollection.find({ email }).toArray((err, collection) => {
       res.send(collection);
     });
+  });
+
+  // Update Job
+  app.patch("/updateJob/:id", (req, res) => {
+    jobCollection
+      .updateOne(
+        { _id: ObjectId(req.params.id) },
+        {
+          $set: {
+            status: req.body.status,
+          },
+        }
+      )
+      .then((result) => res.send(result.modifiedCount > 0));
+  });
+  // Update user
+  app.patch("/updateUser/:email", (req, res) => {
+    userCollection
+      .updateOne(
+        { email: req.params.email },
+        {
+          $set: {
+            jobPostLeft: req.body.jobPostLeft,
+          },
+        }
+      )
+      .then((result) => res.send(result.modifiedCount > 0));
   });
 
 });
