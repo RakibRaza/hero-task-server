@@ -10,10 +10,6 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -21,6 +17,7 @@ const client = new MongoClient(uri, {
 client.connect((err) => {
   const jobCollection = client.db(process.env.DB_NAME).collection("jobs");
   const userCollection = client.db(process.env.DB_NAME).collection("users");
+  const applyCollection = client.db(process.env.DB_NAME).collection("applications");
 
   // Add Job
   app.post("/addJob", (req, res) => {
@@ -29,8 +26,22 @@ client.connect((err) => {
       .insertOne(job)
       .then((result) => res.send(result.insertedCount > 0));
   });
+  // Add Application
+  app.post("/addApplication", (req, res) => {
+    const application = req.body;
+    applyCollection
+      .insertOne(application)
+      .then((result) => res.send(result.insertedCount > 0));
+  });
+  // Get Application
+  app.get("/applications", (req, res) => {
+    const email = req.query.email;
+    applyCollection.find({ email }).toArray((err, collection) => {
+      res.send(collection);
+    });
+  });
 
-  // Get All Job
+  // Get Job
   app.get("/approvedJobs", (req, res) => {
     jobCollection.find({ status: 'done' }).toArray((err, collection) => res.send(collection));
   });
@@ -60,7 +71,7 @@ client.connect((err) => {
     });
   });
 
-  // Update Job
+  // Update Job Status
   app.patch("/updateJob/:id", (req, res) => {
     jobCollection
       .updateOne(
@@ -73,7 +84,8 @@ client.connect((err) => {
       )
       .then((result) => res.send(result.modifiedCount > 0));
   });
-  // Update user
+
+  // Update user job post, left per month
   app.patch("/updateUser/:email", (req, res) => {
     userCollection
       .updateOne(
